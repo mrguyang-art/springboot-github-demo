@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring Boot + GitHub Actions Demo</title>
+<style>body{margin:0;background:#f4f7fb;color:#172033;font-family:system-ui,sans-serif}main{max-width:860px;margin:8vh auto;padding:0 24px}.panel{background:white;border-radius:18px;padding:36px;box-shadow:0 12px 40px #17203312}.tag{display:inline-block;padding:6px 12px;border-radius:99px;background:#e7f5ed;color:#17663b;font-size:14px}li{margin:10px 0}code{background:#eef2f7;padding:3px 6px;border-radius:5px}a{color:#155eef}</style>
+</head>
+<body><main><section class="panel">
+<span class="tag">GitHub Pages Demo</span><h1>Spring Boot + GitHub Actions</h1>
+<p>这是一个演示项目：Spring Boot 提供 REST API，GitHub Actions 自动构建、测试，并将此静态站点发布到 GitHub Pages。</p>
+<h2>流水线步骤</h2><ol><li>Push 代码到 main</li><li>GitHub Actions 检出代码并配置 Java 21</li><li>Maven 执行 mvn -B verify</li><li>JUnit 自动运行接口测试</li><li>Pages Workflow 上传 docs/ 并部署</li></ol>
+<h2>后端 API</h2><p>GET /api/hello 返回 JSON 欢迎消息。</p><p>GET /actuator/health 返回 Spring Boot 健康状态。</p>
+<p><a href="https://github.com/mrguyang-art/springboot-github-demo">在 GitHub 查看项目</a></p>
+</section></main></body></html>
