@@ -37,3 +37,45 @@
 
 ## 推送验证
 本次提交用于再次触发 `main` 分支上的 GitHub Actions 构建与 Pages 部署工作流。
+
+## GitHub Releases 与 GHCR Packages
+
+发布流水线位于 `.github/workflows/release.yml`，Docker 构建文件为仓库根目录的 `Dockerfile`。
+
+### 发布一个版本
+
+1. 确保代码已合并到 `main`，且 CI 测试通过。
+2. 在本地创建并推送语义化版本标签，例如：
+
+   ```bash
+   git checkout main
+   git pull
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+3. 打开仓库的 Actions 页面，查看 **Release and publish** 工作流。
+4. 工作流成功后，在 Releases 页面可下载构建好的 JAR；GHCR 中会有对应的容器镜像。
+
+### 发布产物
+
+- GitHub Release：自动生成 Release Notes，并附加 Spring Boot JAR。
+- GitHub Actions Artifact：保存名为 `springboot-jar-1.0.0` 的构建产物，保留 30 天。
+- GHCR：`ghcr.io/mrguyang-art/springboot-github-demo:1.0.0`、`:1.0` 和 `:latest`。
+
+拉取并运行镜像：
+
+```bash
+docker pull ghcr.io/mrguyang-art/springboot-github-demo:1.0.0
+docker run --rm -p 8080:8080 ghcr.io/mrguyang-art/springboot-github-demo:1.0.0
+```
+
+访问 `http://localhost:8080/api/hello` 验证服务。
+
+### GHCR 可见性
+
+首次推送后，镜像可能默认为 Private。若希望公开拉取，请进入 GitHub 个人主页 → Packages → 对应容器包 → Package settings，将 Visibility 设置为 Public。公开后无需登录即可拉取；私有包需要先执行 `docker login ghcr.io`。
+
+### 手动触发
+
+也可以在 Actions → **Release and publish** → Run workflow 中输入已存在的版本标签（例如 `v1.0.0`），重新执行该版本的发布流程。
