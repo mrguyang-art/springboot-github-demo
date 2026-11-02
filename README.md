@@ -34,3 +34,6 @@
 - `src/main/java/com/demo/`：Spring Boot 应用
 - `src/test/java/`：自动化测试
 - `pom.xml`：Maven 配置
+
+## 推送验证
+本次提交用于再次触发 `main` 分支上的 GitHub Actions 构建与 Pages 部署工作流。
