@@ -2,12 +2,12 @@ name: Release and publish
 
 on:
   push:
-    tags:
+    branches:
       - 'v*.*.*'
   workflow_dispatch:
     inputs:
-      tag:
-        description: Existing version tag to publish (for example v1.0.0)
+      branch:
+        description: Version branch to publish (for example v1.0.0)
         required: true
         type: string
 
@@ -16,7 +16,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -28,11 +28,11 @@ jobs:
         id: version
         shell: bash
         env:
-          RELEASE_TAG_INPUT: ${{ inputs.tag }}
+          RELEASE_BRANCH_INPUT: ${{ inputs.branch }}
         run: |
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            TAG="${RELEASE_TAG_INPUT}"
-            git check-ref-format "refs/tags/${TAG}"
+            TAG="${RELEASE_BRANCH_INPUT}"
+            git check-ref-format "refs/heads/${TAG}"
           else
             TAG="${GITHUB_REF_NAME}"
           fi
@@ -70,6 +70,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
