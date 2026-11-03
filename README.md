@@ -2,13 +2,13 @@
 
 这是一个基于 Java 21、Spring Boot 和 Maven 的示例项目，用来演示从应用开发、自动化测试到容器镜像发布的基本 DevOps 流程。
 
-项目包含 Spring Boot REST API、GitHub Actions CI、GitHub Pages、Docker，以及通过 GitHub Releases 和 GitHub Container Registry（GHCR）发布版本。
+项目包含 Spring Boot REST API、GitHub Actions CI、GitHub Pages 静态网站、Docker，以及通过 GitHub Releases 和 GitHub Container Registry（GHCR）发布版本。
 
 ## 功能概览
 
 - **Spring Boot REST API**：提供欢迎消息接口和 Actuator 健康检查接口。
 - **自动化 CI**：Push 到 main 或向 main 创建 Pull Request 时，自动执行 Maven 构建和测试。
-- **GitHub Pages**：自动部署 docs/ 目录中的静态项目介绍页面。
+- **GitHub Pages**：从 main 分支的 /docs 目录直接发布多页面静态项目网站，无需 Pages 专用 Actions 工作流。
 - **Docker**：使用 Java 21 JRE 镜像运行打包后的 Spring Boot JAR。
 - **版本发布**：推送符合版本命名规则的分支后，自动创建 GitHub Release、上传 JAR，并构建和推送 GHCR 镜像。
 
@@ -75,15 +75,19 @@ mvn -B verify
 
 ## GitHub Pages
 
-静态演示网站位于 docs/index.html，部署工作流为 .github/workflows/pages.yml。
+静态网站位于 docs/ 目录，包含首页、项目架构、API 文档、服务状态、CI/CD、版本发布、快速开始和关于项目等页面。
 
-首次启用时，在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。之后每次 Push 到 main，Pages 工作流会自动部署 docs/ 目录。
+本项目使用 **Deploy from a branch** 发布，不需要专门的 Pages GitHub Actions 工作流。仓库设置为：
+
+- **Settings → Pages → Build and deployment → Source**：Deploy from a branch
+- **Branch**：main
+- **Folder**：/docs
+
+保存设置后，每次向 main 分支推送 docs/ 目录的变更，GitHub Pages 都会自动发布。网站内容由 GitHub Pages 直接托管，不需要构建步骤。
 
 网站地址：
 
 https://mrguyang-art.github.io/springboot-github-demo/
-
-首次部署或配置变更后，请等待 Pages 工作流完成。
 
 ## Docker 本地构建与运行
 
@@ -171,10 +175,17 @@ docker login ghcr.io
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml          # Maven 构建与测试
-│       ├── pages.yml       # GitHub Pages 部署
 │       └── release.yml     # Release、JAR 与 GHCR 镜像发布
 ├── docs/
-│   └── index.html          # GitHub Pages 静态网站
+│   ├── assets/site.css     # 静态网站公共样式
+│   ├── index.html          # 网站首页
+│   ├── architecture.html   # 项目架构
+│   ├── api.html            # API 文档
+│   ├── status.html         # 服务状态说明
+│   ├── cicd.html           # CI/CD 流程
+│   ├── releases.html       # 版本发布
+│   ├── guide.html          # 快速开始
+│   └── about.html          # 关于项目
 ├── src/
 │   ├── main/java/com/demo/
 │   │   ├── DemoApplication.java
