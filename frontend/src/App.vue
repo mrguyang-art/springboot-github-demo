@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 import {
-  Connection, DataBoard, Document, Refresh, CircleCheck, Warning,
+  Connection, DataBoard, Document, Refresh, CircleCheck,
   Monitor, Promotion, Cpu, Link
 } from '@element-plus/icons-vue'
 
@@ -37,6 +37,10 @@ async function loadDemo() {
   }
 }
 
+function openDocs() {
+  window.open('https://mrguyang-art.github.io/springboot-github-demo/', '_blank', 'noopener')
+}
+
 onMounted(loadDemo)
 </script>
 
@@ -66,7 +70,7 @@ onMounted(loadDemo)
             <el-button type="primary" size="large" :loading="loading" @click="loadDemo">
               <el-icon><Refresh /></el-icon> 请求后端 API
             </el-button>
-            <el-button size="large" plain @click="window.open('https://mrguyang-art.github.io/springboot-github-demo/', '_blank')">
+            <el-button size="large" plain @click="openDocs">
               静态项目文档 <el-icon><Promotion /></el-icon>
             </el-button>
           </div>
