@@ -1,81 +1,187 @@
-# Spring Boot GitHub Demo
+# Spring Boot GitHub DevOps Demo
 
-一个使用 Java 21、Spring Boot 3.5 和 Maven 的入门项目，演示 GitHub Actions CI 流水线与 GitHub Pages 自动部署。
+这是一个基于 Java 21、Spring Boot 和 Maven 的示例项目，用来演示从应用开发、自动化测试到容器镜像发布的基本 DevOps 流程。
+
+项目包含 Spring Boot REST API、GitHub Actions CI、GitHub Pages、Docker，以及通过 GitHub Releases 和 GitHub Container Registry（GHCR）发布版本。
+
+## 功能概览
+
+- **Spring Boot REST API**：提供欢迎消息接口和 Actuator 健康检查接口。
+- **自动化 CI**：Push 到 main 或向 main 创建 Pull Request 时，自动执行 Maven 构建和测试。
+- **GitHub Pages**：自动部署 docs/ 目录中的静态项目介绍页面。
+- **Docker**：使用 Java 21 JRE 镜像运行打包后的 Spring Boot JAR。
+- **版本发布**：推送符合版本命名规则的分支后，自动创建 GitHub Release、上传 JAR，并构建和推送 GHCR 镜像。
 
 ## 技术栈
+
 - Java 21
 - Spring Boot 3.5.5
 - Maven
+- Spring Web
+- Spring Boot Actuator
 - JUnit 5 / Spring Boot Test
 - GitHub Actions
 - GitHub Pages
+- Docker / GitHub Container Registry
 
 ## 本地运行
-执行 `mvn spring-boot:run` 启动项目。
 
-接口：
-- `GET http://localhost:8080/api/hello` — 欢迎消息
-- `GET http://localhost:8080/actuator/health` — 健康检查
+确保本机已安装 Java 21 和 Maven。
 
-执行 `mvn -B verify` 编译并运行测试。
+~~~bash
+mvn spring-boot:run
+~~~
 
-## GitHub Actions 流水线
-工作流文件：`.github/workflows/ci.yml`。Push 到 `main` 或创建针对 `main` 的 Pull Request 后，会自动检出代码、配置 Temurin Java 21 和 Maven 缓存，并执行 `mvn -B verify`。在仓库的 Actions 标签页可以查看日志和结果。
+应用默认在 http://localhost:8080 启动。
+
+### API 接口
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| GET | /api/hello | 返回欢迎消息 |
+| GET | /actuator/health | 返回应用健康状态 |
+
+GET /api/hello 示例响应：
+
+~~~json
+{
+  "message": "Hello from Spring Boot!",
+  "status": "success"
+}
+~~~
+
+运行自动化测试和完整 Maven 验证：
+
+~~~bash
+mvn -B verify
+~~~
+
+## GitHub Actions CI
+
+工作流文件：.github/workflows/ci.yml
+
+触发条件：
+- Push 到 main
+- 创建或更新目标分支为 main 的 Pull Request
+- 在 GitHub Actions 页面手动运行
+
+主要步骤：
+1. 检出代码。
+2. 配置 Temurin Java 21 和 Maven 缓存。
+3. 执行 mvn -B verify，编译项目并运行测试。
+4. 上传生成的 JAR，Artifact 名称为 springboot-jar，保留 7 天。
+
+可在仓库的 **Actions** 标签页查看工作流运行记录和日志。
 
 ## GitHub Pages
-静态演示站点位于 `docs/index.html`，部署工作流为 `.github/workflows/pages.yml`。
 
-首次启用请在仓库打开 Settings → Pages，在 Build and deployment → Source 中选择 GitHub Actions 并保存。之后每次 Push 到 `main`，Pages 工作流会自动发布 `docs/`。部署成功后访问 https://mrguyang-art.github.io/springboot-github-demo/ 。首次部署需要等待工作流完成。
+静态演示网站位于 docs/index.html，部署工作流为 .github/workflows/pages.yml。
 
-## 项目结构
-- `.github/workflows/ci.yml`：自动构建与测试
-- `.github/workflows/pages.yml`：自动部署 Pages
-- `docs/index.html`：展示网站
-- `src/main/java/com/demo/`：Spring Boot 应用
-- `src/test/java/`：自动化测试
-- `pom.xml`：Maven 配置
+首次启用时，在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。之后每次 Push 到 main，Pages 工作流会自动部署 docs/ 目录。
 
-## 推送验证
-本次提交用于再次触发 `main` 分支上的 GitHub Actions 构建与 Pages 部署工作流。
+网站地址：
+
+https://mrguyang-art.github.io/springboot-github-demo/
+
+首次部署或配置变更后，请等待 Pages 工作流完成。
+
+## Docker 本地构建与运行
+
+Dockerfile 位于仓库根目录。它使用 eclipse-temurin:21-jre 作为运行环境，并将 Maven 构建生成的 JAR 复制到镜像中。
+
+先在项目根目录构建应用：
+
+~~~bash
+mvn -B package
+~~~
+
+构建 Docker 镜像：
+
+~~~bash
+docker build -t springboot-github-demo:local .
+~~~
+
+启动容器：
+
+~~~bash
+docker run --rm -p 8080:8080 springboot-github-demo:local
+~~~
+
+然后访问 http://localhost:8080/api/hello。
 
 ## GitHub Releases 与 GHCR Packages
 
-发布流水线位于 `.github/workflows/release.yml`，Docker 构建文件为仓库根目录的 `Dockerfile`。
+发布工作流：.github/workflows/release.yml
 
-### 发布一个版本
+工作流会在推送符合版本格式的分支（例如 v1.0.1）时自动运行。它会：
+1. 校验版本分支名称。
+2. 使用该版本分支的代码执行 mvn -B verify。
+3. 上传带版本号的 GitHub Actions Artifact（保留 30 天）。
+4. 创建对应的 GitHub Release，自动生成 Release Notes 并附加 JAR。
+5. 构建 Docker 镜像并推送到 GHCR。
 
-1. 确保代码已合并到 `main`，且 CI 测试通过。
-2. 在本地创建并推送语义化版本标签，例如：
+### 发布新版本
 
-   ```bash
-   git checkout main
-   git pull
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
+版本分支命名采用语义化版本形式，例如 v1.0.1。建议先确保改动已合并到 main，再从 main 创建版本分支：
 
-3. 打开仓库的 Actions 页面，查看 **Release and publish** 工作流。
-4. 工作流成功后，在 Releases 页面可下载构建好的 JAR；GHCR 中会有对应的容器镜像。
+~~~bash
+git checkout main
+git pull origin main
+git checkout -b v1.0.1
+git push -u origin v1.0.1
+~~~
+
+推送版本分支后，**Release and publish** 工作流会自动执行。也可以在 GitHub **Actions → Release and publish → Run workflow** 手动运行：在页面的分支选择器中选择目标版本分支，并将 branch 输入值填写为相同的分支名称（例如 v1.0.1）。
 
 ### 发布产物
 
-- GitHub Release：自动生成 Release Notes，并附加 Spring Boot JAR。
-- GitHub Actions Artifact：保存名为 `springboot-jar-1.0.0` 的构建产物，保留 30 天。
-- GHCR：`ghcr.io/mrguyang-art/springboot-github-demo:1.0.0`、`:1.0` 和 `:latest`。
+以 v1.0.0 为例：
 
-拉取并运行镜像：
+- **GitHub Release**：https://github.com/mrguyang-art/springboot-github-demo/releases/tag/v1.0.0
+- **JAR 文件**：Release 页面提供 Maven 构建生成的 JAR 下载。
+- **GitHub Actions Artifact**：名称为 springboot-jar-1.0.0，保留 30 天。
+- **GHCR 镜像标签**：
+  - ghcr.io/mrguyang-art/springboot-github-demo:1.0.0
+  - ghcr.io/mrguyang-art/springboot-github-demo:1.0
+  - ghcr.io/mrguyang-art/springboot-github-demo:latest
 
-```bash
+拉取并运行指定版本镜像：
+
+~~~bash
 docker pull ghcr.io/mrguyang-art/springboot-github-demo:1.0.0
 docker run --rm -p 8080:8080 ghcr.io/mrguyang-art/springboot-github-demo:1.0.0
-```
+~~~
 
-访问 `http://localhost:8080/api/hello` 验证服务。
+访问 http://localhost:8080/api/hello 验证服务。
 
-### GHCR 可见性
+### GHCR 镜像可见性
 
-首次推送后，镜像可能默认为 Private。若希望公开拉取，请进入 GitHub 个人主页 → Packages → 对应容器包 → Package settings，将 Visibility 设置为 Public。公开后无需登录即可拉取；私有包需要先执行 `docker login ghcr.io`。
+首次发布后，GHCR Package 可能默认为 Private。若希望其他人无需登录即可拉取镜像，请进入 GitHub **个人主页 → Packages → 对应容器包 → Package settings**，将可见性设置为 **Public**。
 
-### 手动触发
+如果镜像是 Private，需要先登录 GHCR：
 
-也可以在 Actions → **Release and publish** → Run workflow 中输入已存在的版本标签（例如 `v1.0.0`），重新执行该版本的发布流程。
+~~~bash
+docker login ghcr.io
+~~~
+
+## 项目结构
+
+~~~text
+.
+├── .github/
+│   └── workflows/
+│       ├── ci.yml          # Maven 构建与测试
+│       ├── pages.yml       # GitHub Pages 部署
+│       └── release.yml     # Release、JAR 与 GHCR 镜像发布
+├── docs/
+│   └── index.html          # GitHub Pages 静态网站
+├── src/
+│   ├── main/java/com/demo/
+│   │   ├── DemoApplication.java
+│   │   └── controller/
+│   │       └── HelloController.java
+│   └── test/java/com/demo/controller/
+│       └── HelloControllerTest.java
+├── Dockerfile
+└── pom.xml
+~~~
