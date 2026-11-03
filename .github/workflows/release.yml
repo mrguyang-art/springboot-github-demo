@@ -1,4 +1,4 @@
-name: Release and publish
+name: Release and publish backend
 
 on:
   push:
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build, release JAR, and publish image
+    name: Build backend, release JAR, and publish image
     runs-on: ubuntu-latest
     steps:
       - name: Resolve release tag
@@ -37,13 +37,13 @@ jobs:
             TAG="${GITHUB_REF_NAME}"
           fi
           if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Expected a semantic version tag such as v1.0.0; got: ${TAG}" >&2
+            echo "Expected a semantic version branch such as v1.0.0; got: ${TAG}" >&2
             exit 1
           fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Check out tagged source
+      - name: Check out version branch
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.version.outputs.tag }}
@@ -54,15 +54,17 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
-      - name: Build and run tests
+      - name: Build and run backend tests
+        working-directory: backend
         run: mvn -B verify
 
-      - name: Upload JAR artifact
+      - name: Upload backend JAR artifact
         uses: actions/upload-artifact@v4
         with:
-          name: springboot-jar-${{ steps.version.outputs.version }}
-          path: target/*.jar
+          name: springboot-backend-${{ steps.version.outputs.version }}
+          path: backend/target/*.jar
           if-no-files-found: error
           retention-days: 30
 
@@ -74,7 +76,7 @@ jobs:
           name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
-          files: target/*.jar
+          files: backend/target/*.jar
           fail_on_unmatched_files: true
 
       - name: Set up Docker Buildx
@@ -97,10 +99,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.tag }}
             type=raw,value=latest
 
-      - name: Build and push Docker image
+      - name: Build and push backend Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
